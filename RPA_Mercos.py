@@ -44,10 +44,20 @@ class Projeto():
                 self.data_hora = self.data_processamento.strftime("%Y_%m_%d__%H_%M")
                 self.pasta_arquivos = os.path.join(self.caminho_pastas,self.data_hora)
                 
+                if os.path.isdir(self.caminho_pastas):
+                    pass
+                else:
+                    os.mkdir(self.caminho_pastas)
+                
                 if os.path.isdir(self.pasta_arquivos):
                     pass
                 else:
                     os.mkdir(self.pasta_arquivos)
+
+                if os.path.isdir(self.caminho_layout):
+                    pass
+                else:
+                    os.mkdir(self.caminho_layout)
                     
                 return True
             
