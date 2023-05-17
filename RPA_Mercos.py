@@ -24,6 +24,7 @@ class Projeto():
             'desconto':float,
             'cond_pagamento':str,
             'transportadora':str,
+            'observacao':str,
         }
         
         self.pedidos_geral = pd.DataFrame(columns=self.dict_pedidos.keys())
@@ -158,6 +159,7 @@ class Projeto():
             id_pedido = str(id_pedido[1][0])
             page_mercos.fill('//*[@id="id_texto"]', id_pedido)
             page_mercos.click('//*[@id="form_pesquisa_normal"]/div[1]/button')
+            sleep(2)
             page_mercos.click('//*[@id="js-div-global"]/div[2]/section/div[2]/div[1]/div[4]/div[2]/div[1]')
             cnpj = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/h5/small[2]').inner_text()
             cnpj = Projeto.trata_dados_cnpj(cnpj)
@@ -167,6 +169,7 @@ class Projeto():
             representada = page_mercos.locator('//*[@id="nome-representada-selecionada"]').inner_text()
             cond_pagamento = page_mercos.locator('//*[@id="informacoes_complementares"]/div/div/div[2]/div/div/div[2]').inner_text()
             transportadora = page_mercos.locator('//*[@id="informacoes_complementares"]/div/div/div[3]/div[2]/div/div[2]').inner_text()
+            observacao = page_mercos.locator('//*[@id="informacoes_complementares"]/div/div/div[4]/div[2]').inner_text()
             mostrar_todos = page_mercos.locator('//*[@id="listagem_item"]/div[2]/a').inner_text()
             if 'mostrar todos' in mostrar_todos.lower():
                 page_mercos.click('//*[@id="listagem_item"]/div[2]/a')
@@ -188,7 +191,7 @@ class Projeto():
                             desconto = list_dados[1]
                             
                             self.pedidos_geral.loc[len(self.pedidos_geral)] = (id_pedido, cnpj, nome_cliente, representada, estado, cod_produto, descricao_produto, qnt, preco, desconto, 
-                                                                        cond_pagamento, transportadora)
+                                                                        cond_pagamento, transportadora, observacao)
                         else:
                             pass
                     else:
@@ -199,7 +202,7 @@ class Projeto():
         Projeto.grava_excel(self.pedidos_geral,self.pasta_arquivos+'/pedidos_geral.xlsx')
         Projeto.grava_excel(self.pedidos_geral,self.caminho_layout+'/layout.xlsx')
                 
-        return
+        return page_mercos
     
 # Opus ------------------------------------------------------------------------------------------
 
@@ -262,8 +265,10 @@ class Projeto():
                     page_opus.locator('#Pedido_UNID_COD').select_option('OPUS SISTEMAS')
                 sleep(3)
                 page_opus.fill('//*[@id="Pedido_PEDS_EXT_CODCLI"]', '.')
-                order['cond_pagamento'][0] = '28/35' #-----------------retirar
+                # order['cond_pagamento'][0] = '28/35' #-----------------retirar
+                sleep(2)
                 page_opus.locator('#Pedido_COPG_COD_001').select_option((order['cond_pagamento'][0]+' DIAS')) 
+                sleep(2)
                 page_opus.click('//*[@id="identificacao-pedido"]/div[1]/a[2]')
                 sleep(3)
                 
@@ -278,12 +283,16 @@ class Projeto():
                     page_opus.click('//*[@id="btnSalvar"]')
                     
                 page_opus.click('//*[@id="itens-pedido"]/div[1]/a[2]')
-                order['transportadora'][0]='TRANSVOAR' #-----------------retirar
+                # order['transportadora'][0]='TRANSVOAR' #-----------------retirar
+                sleep(3)
                 page_opus.locator('#Pedido_SERT_COD').select_option(order['transportadora'][0])
+                page_opus.fill('//*[@id="Pedido_OBPD_OBS"]', str(order['observacao'][0]))
                 page_opus.click('//*[@id="info-adicionais"]/div[1]/a[2]')
-                # page_opus.click('//*[@id="revisao-pedido"]/div[2]/div[3]/a[2]')      
+                page_opus.click('//*[@id="revisao-pedido"]/div[2]/div[3]/a[2]')      
                 
-                self.df_result_pedidos_opus.loc[len(self.df_result_pedidos_opus)] = (pedido, 'OK')                
+                self.df_result_pedidos_opus.loc[len(self.df_result_pedidos_opus)] = (pedido, 'OK')     
+                
+                page_opus.click('//*[@id="confirmar-pedido"]/div[2]/div/a[1]')           
                 
             except Exception as e:
                 
@@ -316,10 +325,15 @@ class Projeto():
             for row, pedido in pedidos_ok.iterrows():
                 
                 page_mercos.click('//*[@id="aba_pedidos"]/span')                
-                page_mercos.fill('//*[@id="id_texto"]', pedido['pedido'][row])
+                page_mercos.fill('//*[@id="id_texto"]', pedido['pedido'])
                 page_mercos.click('//*[@id="form_pesquisa_normal"]/div[1]/button')
+                sleep(2)
                 page_mercos.click('//*[@id="js-div-global"]/div[2]/section/div[2]/div[1]/div[4]/div[2]/div[1]')
                 page_mercos.click('//*[@id="js-div-global"]/div[3]/section/div[3]/div[10]/div[3]/button[1]')
+                sleep(2)
+                page_mercos.click('//*[@id="outras_opcoes"]/a')
+                sleep(2)
+                page_mercos.click('//*[@id="outras_opcoes"]/ul/li[9]/a')
                 sleep(3)
                 
             page_mercos.close()
