@@ -161,13 +161,21 @@ class Projeto():
             page_mercos.click('//*[@id="form_pesquisa_normal"]/div[1]/button')
             sleep(2)
             page_mercos.click('//*[@id="js-div-global"]/div[2]/section/div[2]/div[1]/div[4]/div[2]/div[1]')
-            cnpj = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/h5/small[2]').inner_text()
+            try:
+                cnpj = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/h5/small[2]').inner_text(timeout=1000)
+            except:
+                cnpj = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/h5/small').inner_text()
+            
+            
             cnpj = Projeto.trata_dados_cnpj(cnpj)
             estado = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/div[2]/div/span').inner_text()
             estado = Projeto.trata_dados_estado(estado)
             nome_cliente = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/h5/small[1]').inner_text()
             representada = page_mercos.locator('//*[@id="nome-representada-selecionada"]').inner_text()
-            cond_pagamento = page_mercos.locator('//*[@id="informacoes_complementares"]/div/div/div[2]/div/div/div[2]').inner_text()
+            try:
+                cond_pagamento = page_mercos.locator('//*[@id="informacoes_complementares"]/div/div/div[2]/div/div/div[2]').inner_text()
+            except:
+                cond_pagamento = page_mercos.locator('//*[@id="informacoes_complementares"]/div/div/div[2]/div[1]/div/div[2]').inner_text()
             transportadora = page_mercos.locator('//*[@id="informacoes_complementares"]/div/div/div[3]/div[2]/div/div[2]').inner_text()
             observacao = page_mercos.locator('//*[@id="informacoes_complementares"]/div/div/div[4]/div[2]').inner_text()
             mostrar_todos = page_mercos.locator('//*[@id="listagem_item"]/div[2]/a').inner_text()
@@ -237,71 +245,172 @@ class Projeto():
             self.pedidos_geral = Projeto.le_excel(self.caminho_layout+'/layout.xlsx')
             
         pedidos_opus = self.pedidos_geral.loc[self.pedidos_geral['representada']=='OpusLed']
-        # pedidos = list(map(int,pedidos_opus['id_pedido'].drop_duplicates()))  
-        pedidos = list(pedidos_opus['id_pedido'].drop_duplicates())
         
-        
-        for pedido in pedidos:
-            try:
-                order = self.pedidos_geral.loc[self.pedidos_geral['id_pedido'] == pedido]
-                order = order.reset_index()
-                try:
-                    page_opus.goto('http://opusled.ddns.mobi:84/')
-                    page_opus.click('//*[@id="mainpage"]/div[2]/div[1]/nav/ul/li[4]/a')
-                    page_opus.click('//*[@id="btnBuscarCliente"]')
-                    page_opus.fill('//*[@id="Filter_PARC_CGC"]', str(order['cnpj'][0]))
-                    page_opus.click('//*[@id="btnPesquisarCliente"]')
-                except:
-                    button = page_opus.query_selector_all('[data-popup-button]')[1].click()
-                    page_opus.click('//*[@id="btnBuscarCliente"]')
-                    page_opus.fill('//*[@id="Filter_PARC_CGC"]', str(order['cnpj'][0]))
-                    page_opus.click('//*[@id="btnPesquisarCliente"]')
-                    
-                page_opus.click('//*[@id="btnPesquisarCliente"]')
-                page_opus.click('//*[@id="listaLocRapCliente"]/li[2]/a')
-                if order['estado'][0] == 'SãoPaulo':
-                    page_opus.locator('#Pedido_UNID_COD').select_option('OPERA SOLUCOES')           
-                else:
-                    page_opus.locator('#Pedido_UNID_COD').select_option('OPUS SISTEMAS')
-                sleep(3)
-                page_opus.fill('//*[@id="Pedido_PEDS_EXT_CODCLI"]', '.')
-                # order['cond_pagamento'][0] = '28/35' #-----------------retirar
-                sleep(2)
-                page_opus.locator('#Pedido_COPG_COD_001').select_option((order['cond_pagamento'][0]+' DIAS')) 
-                sleep(2)
-                page_opus.click('//*[@id="identificacao-pedido"]/div[1]/a[2]')
-                sleep(3)
-                
-                for row, item in order.iterrows():
-                    
-                    page_opus.fill('//*[@id="edtPROD_EXT_COD"]', item['cod_produto'])
-                    page_opus.click('//*[@id="btnPesquisarProduto"]')
-                    sleep(3)
-                    page_opus.fill('//*[@id="Pedido_ItemAtual_ITPS_QTD_PED"]', str(item['qnt']))
-                    page_opus.fill('//*[@id="Pedido_ItemAtual_ITPS_VLF_PRELIQ"]', str(item['preco']))
-                    page_opus.fill('//*[@id="Pedido_ItemAtual_ITPS_EXT_CODCLI"]', '.')
-                    page_opus.click('//*[@id="btnSalvar"]')
-                    
-                page_opus.click('//*[@id="itens-pedido"]/div[1]/a[2]')
-                # order['transportadora'][0]='TRANSVOAR' #-----------------retirar
-                sleep(3)
-                page_opus.locator('#Pedido_SERT_COD').select_option(order['transportadora'][0])
-                page_opus.fill('//*[@id="Pedido_OBPD_OBS"]', str(order['observacao'][0]))
-                page_opus.click('//*[@id="info-adicionais"]/div[1]/a[2]')
-                page_opus.click('//*[@id="revisao-pedido"]/div[2]/div[3]/a[2]')      
-                
-                self.df_result_pedidos_opus.loc[len(self.df_result_pedidos_opus)] = (pedido, 'OK')     
-                
-                page_opus.click('//*[@id="confirmar-pedido"]/div[2]/div/a[1]')           
-                
-            except Exception as e:
-                
-                self.df_result_pedidos_opus.loc[len(self.df_result_pedidos_opus)] = (pedido, f'ERRO: {e}')
-                pass
-                
-        Projeto.grava_excel(self.df_result_pedidos_opus, self.pasta_arquivos+'/result_pedidos_opus.xlsx')
+        if len(pedidos_opus) == 0:
+            page_opus.close()
+            return
             
-        page_opus.close()            
+        else:
+            # pedidos = list(map(int,pedidos_opus['id_pedido'].drop_duplicates()))  
+            pedidos = list(pedidos_opus['id_pedido'].drop_duplicates())
+            
+            
+            for pedido in pedidos:
+                try:
+                    order = self.pedidos_geral.loc[self.pedidos_geral['id_pedido'] == pedido]
+                    order = order.reset_index()
+                    try:
+                        page_opus.goto('http://opusled.ddns.mobi:84/')
+                        page_opus.click('//*[@id="mainpage"]/div[2]/div[1]/nav/ul/li[4]/a')
+                        page_opus.click('//*[@id="btnBuscarCliente"]')
+                        page_opus.fill('//*[@id="Filter_PARC_CGC"]', str(order['cnpj'][0]))
+                        page_opus.click('//*[@id="btnPesquisarCliente"]')
+                    except:
+                        button = page_opus.query_selector_all('[data-popup-button]')[1].click()
+                        page_opus.click('//*[@id="btnBuscarCliente"]')
+                        page_opus.fill('//*[@id="Filter_PARC_CGC"]', str(order['cnpj'][0]))
+                        page_opus.click('//*[@id="btnPesquisarCliente"]')
+                        
+                    page_opus.click('//*[@id="btnPesquisarCliente"]')
+                    page_opus.click('//*[@id="listaLocRapCliente"]/li[2]/a')
+                    sleep(3)
+                    if order['estado'][0] == 'SãoPaulo':
+                        page_opus.locator('#Pedido_UNID_COD').select_option('OPERA SOLUCOES')           
+                    else:
+                        page_opus.locator('#Pedido_UNID_COD').select_option('OPUS SISTEMAS')
+                    sleep(3)
+                    page_opus.fill('//*[@id="Pedido_PEDS_EXT_CODCLI"]', '.')
+                    # order['cond_pagamento'][0] = '28/35' #-----------------retirar
+                    sleep(2)
+                    if order['cond_pagamento'][0] == 'A VISTA ANTECIPADO':
+                        page_opus.locator('#Pedido_COPG_COD_001').select_option((order['cond_pagamento'][0])) 
+                    else:
+                        page_opus.locator('#Pedido_COPG_COD_001').select_option((order['cond_pagamento'][0]+' DIAS')) 
+                    sleep(2)
+                    page_opus.click('//*[@id="identificacao-pedido"]/div[1]/a[2]')
+                    sleep(3)
+                    
+                    for row, item in order.iterrows():
+                        
+                        page_opus.fill('//*[@id="edtPROD_EXT_COD"]', item['cod_produto'])
+                        page_opus.click('//*[@id="btnPesquisarProduto"]')
+                        sleep(3)
+                        page_opus.fill('//*[@id="Pedido_ItemAtual_ITPS_QTD_PED"]', str(item['qnt']))
+                        page_opus.fill('//*[@id="Pedido_ItemAtual_ITPS_VLF_PRELIQ"]', str(item['preco']))
+                        page_opus.fill('//*[@id="Pedido_ItemAtual_ITPS_EXT_CODCLI"]', '.')
+                        page_opus.click('//*[@id="btnSalvar"]')
+                        
+                    page_opus.click('//*[@id="itens-pedido"]/div[1]/a[2]')
+                    # order['transportadora'][0]='TRANSVOAR' #-----------------retirar
+                    sleep(3)
+                    page_opus.locator('#Pedido_SERT_COD').select_option(order['transportadora'][0])
+                    page_opus.fill('//*[@id="Pedido_OBPD_OBS"]', str(order['observacao'][0]))
+                    page_opus.click('//*[@id="info-adicionais"]/div[1]/a[2]')
+                    page_opus.click('//*[@id="revisao-pedido"]/div[2]/div[3]/a[2]')      
+                    
+                    self.df_result_pedidos_opus.loc[len(self.df_result_pedidos_opus)] = (pedido, 'OK')     
+                    
+                    page_opus.click('//*[@id="confirmar-pedido"]/div[2]/div/a[1]')           
+                    
+                except Exception as e:
+                    
+                    self.df_result_pedidos_opus.loc[len(self.df_result_pedidos_opus)] = (pedido, f'ERRO: {e}')
+                    pass
+                    
+            Projeto.grava_excel(self.df_result_pedidos_opus, self.pasta_arquivos+'/result_pedidos_opus.xlsx')
+                
+            page_opus.close()            
+
+# Stamaco ------------------------------------------------------------------------------------------
+
+    def deve_logar_stamaco(self, browser):
+        
+        context_stamaco = browser.new_context(locale='pt-BR', timezone_id="America/Sao_Paulo")
+        page_stamaco = context_stamaco.new_page()
+               
+        url = "https://app.mercos.com/login"
+        username = dados.stamaco_lg
+        password = dados.stamaco_ps
+        
+        page_stamaco.goto(url)
+        page_stamaco.fill('//*[@id="id_usuario"]', username)
+        page_stamaco.fill('//*[@id="id_senha"]', password)
+        page_stamaco.click('//*[@id="botaoEfetuarLogin"]')
+        
+        return page_stamaco
+    
+    def deve_digitar_pedidos_stamaco(self, page_stamaco):
+        
+        dict_result_pedidos_stamaco = {
+            'pedido':str,
+            'status':str,
+        }
+        
+        self.df_result_pedidos_stamaco = pd.DataFrame(columns=dict_result_pedidos_stamaco.keys())
+        
+        if len(self.pedidos_geral) == 0:
+            
+            self.pedidos_geral = Projeto.le_excel(self.caminho_layout+'/layout.xlsx')
+            
+        pedidos_stamaco = self.pedidos_geral.loc[self.pedidos_geral['representada']=='Stamaco']
+        
+        if len(pedidos_stamaco) == 0:
+            page_stamaco.close()
+            return
+            
+        else:
+            
+            page_stamaco.click('//*[@id="aba_pedidos"]/span')
+            page_stamaco.click('//*[@id="btn_criar_pedido"]')
+            
+            # pedidos = list(map(int,pedidos_opus['id_pedido'].drop_duplicates()))  
+            pedidos = list(pedidos_stamaco['id_pedido'].drop_duplicates())
+                    
+            for pedido in pedidos:
+                try:
+                    order = self.pedidos_geral.loc[self.pedidos_geral['id_pedido'] == pedido]
+                    order = order.reset_index()
+                    
+                    page_stamaco.fill('//*[@id="id_codigo_cliente"]', str(order['cnpj'][0]))
+                    page_stamaco.keyboard.press('Space')
+                    sleep(3)
+                    page_stamaco.keyboard.press('Enter')
+                    
+                    for row, item in order.iterrows():
+                        
+                        page_stamaco.fill('//*[@id="produto_autocomplete"]', item['cod_produto'])
+                        page_stamaco.keyboard.press('Space')
+                        sleep(3)
+                        page_stamaco.keyboard.press('Enter')
+                        page_stamaco.locator('//*[@id="id_tabela_preco"]', has_text=str(item['preco']).replace('.',',')).click() 
+                        page_stamaco.keyboard.press('Enter')
+                        page_stamaco.fill('//*[@id="id_quantidade"]', item['qnt'])
+                        if item['desconto'] > 0:
+                            page_stamaco.fill('//*[@id="id_desconto_formset-0-desconto"]', str(item['desconto']))
+                        page_stamaco.click('//*[@id="adicao_produto"]/form/div[3]/a[1]')
+                        sleep(5)
+                        
+                    page_stamaco.click('//*[@id="alterar_informacoes"]')
+                    # page_stamaco.locator('//*[@id="id_cond_pagamento"]', has_text=str(order['cond_pagamento'][0])).click() 
+                    # page_stamaco.locator('//*[@id="id_transportadora"]', has_text=str(order['transportadora'][0])).click()
+                    page_stamaco.select_option('//*[@id="id_cond_pagamento"]', label=str(order['cond_pagamento'][0]))
+                    page_stamaco.select_option('//*[@id="id_transportadora"]', label=str(order['transportadora'][0]))
+                    page_stamaco.fill('//*[@id="id_informacoes_adicionais"]', str(order['observacao'][0]))
+                    page_stamaco.click('//*[@id="simplest_modal"]/div[2]/form/div[2]/a[1]')
+                    page_stamaco.click('//*[@id="acoes_email"]/div/button[1]')
+                    
+                    self.df_result_pedidos_stamaco.loc[len(self.df_result_pedidos_stamaco)] = (pedido, 'OK')     
+                    
+                    page_stamaco.click('//*[@id="aba_pedidos"]/i')           
+                    
+                except Exception as e:
+                    
+                    self.df_result_pedidos_stamaco.loc[len(self.df_result_pedidos_stamaco)] = (pedido, f'ERRO: {e}')
+                    pass
+                    
+            Projeto.grava_excel(self.df_result_pedidos_stamaco, self.pasta_arquivos+'/result_pedidos_stamaco.xlsx')
+                
+            page_stamaco.close()            
             
 # Execucao -------------------------------------------------------------------------------------- 
             
@@ -315,12 +424,22 @@ class Projeto():
 
         page = Projeto.deve_logar_opus(browser)
         Projeto.deve_digitar_pedidos_opus(page)
+ 
+    def roteiro_stamaco(self,browser):
+
+        page = Projeto.deve_logar_stamaco(browser)
+        Projeto.deve_digitar_pedidos_stamaco(page)
         
     def roteiro_finaliza(self,page_mercos):
         
-        if len(self.df_result_pedidos_opus) > 0:
+        df_result_geral = pd.concat([self.df_result_pedidos_stamaco,self.df_result_pedidos_opus], ignore_index=True)
+        
+        if len(df_result_geral) > 0:
             
-            pedidos_ok = self.df_result_pedidos_opus.loc[self.df_result_pedidos_opus['status']=='OK']
+            url = "https://app.mercos.com/login"           
+            page_mercos.goto(url)
+            
+            pedidos_ok = df_result_geral.loc[df_result_geral['status']=='OK']
             
             for row, pedido in pedidos_ok.iterrows():
                 
@@ -340,13 +459,14 @@ class Projeto():
                             
     def execute(self):
 
-        self.df_pedidos_mercos = Projeto.le_excel(self.caminho_raiz+'/pedidos.xlsx')
+        self.df_pedidos_mercos = Projeto.le_excel(self.caminho_raiz+'pedidos.xlsx')
         if len(self.df_pedidos_mercos) > 0:
             with sync_playwright() as playwright:
                 chromium = playwright.chromium
                 browser = chromium.launch(headless=False)
                 page_mercos = Projeto.roteiro_mercos(browser)
                 Projeto.roteiro_opus(browser)
+                Projeto.roteiro_stamaco(browser)
                 Projeto.roteiro_finaliza(page_mercos)
         else:
             print('Nenhum pedido para ser transmitido')
