@@ -29,6 +29,9 @@ class Projeto():
         
         self.pedidos_geral = pd.DataFrame(columns=self.dict_pedidos.keys())
         
+        self.df_result_pedidos_stamaco = pd.DataFrame()
+        self.df_result_pedidos_opus = pd.DataFrame()
+        
         Projeto.set_variaveis_caminhos(self)
         
     def set_variaveis_caminhos(self):
@@ -103,6 +106,22 @@ class Projeto():
         
         return estado
     
+    def trata_dados_nome_cliente(self, nome_cliente):
+        
+        nome_cliente = nome_cliente.replace("-","")
+        nome_cliente = nome_cliente.strip()     
+        
+        return nome_cliente    
+    
+    def trata_dados_estado(self, estado):
+        
+        estado = estado.replace(" ","")
+        separa = estado.split(',')
+        estado = separa[1]
+        
+        
+        return estado
+    
     def trata_dados_produtos(self, preco, desconto):
         
         preco = preco.replace("R","")
@@ -149,6 +168,8 @@ class Projeto():
         page_mercos.fill('//*[@id="id_senha"]', password)
         page_mercos.click('//*[@id="botaoEfetuarLogin"]')
         
+        sleep(10)
+        
         return page_mercos
         
     def seleciona_pedidos_mercos(self, page_mercos):
@@ -162,15 +183,19 @@ class Projeto():
             sleep(2)
             page_mercos.click('//*[@id="js-div-global"]/div[2]/section/div[2]/div[1]/div[4]/div[2]/div[1]')
             try:
-                cnpj = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/h5/small[2]').inner_text(timeout=1000)
+                cnpj = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/div[1]/div[1]/h5/small[2]').inner_text(timeout=1000)
             except:
-                cnpj = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/h5/small').inner_text()
+                try:
+                    cnpj = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/h5/small').inner_text()
+                except:
+                    cnpj = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/h5/small[2]').inner_text()
             
             
             cnpj = Projeto.trata_dados_cnpj(cnpj)
-            estado = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/div[2]/div/span').inner_text()
+            estado = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/div[3]/div/span').inner_text()
             estado = Projeto.trata_dados_estado(estado)
-            nome_cliente = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/h5/small[1]').inner_text()
+            nome_cliente = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/div[1]/div[1]/h5/small[1]').inner_text()
+            nome_cliente = Projeto.trata_dados_nome_cliente(nome_cliente)
             representada = page_mercos.locator('//*[@id="nome-representada-selecionada"]').inner_text()
             try:
                 cond_pagamento = page_mercos.locator('//*[@id="informacoes_complementares"]/div/div/div[2]/div/div/div[2]').inner_text()
@@ -209,8 +234,9 @@ class Projeto():
          
         Projeto.grava_excel(self.pedidos_geral,self.pasta_arquivos+'/pedidos_geral.xlsx')
         Projeto.grava_excel(self.pedidos_geral,self.caminho_layout+'/layout.xlsx')
-                
-        return page_mercos
+              
+        page_mercos.close()  
+        return
     
 # Opus ------------------------------------------------------------------------------------------
 
@@ -219,7 +245,7 @@ class Projeto():
         context_opus = browser.new_context(locale='pt-BR', timezone_id="America/Sao_Paulo")
         page_opus = context_opus.new_page()
         
-        url = "http://opusled.ddns.mobi:84/"
+        url = "http://signusmobileopus.smartservices.solutions:1010"
         username = dados.opus_lg
         password = dados.opus_ps
         
@@ -260,7 +286,7 @@ class Projeto():
                     order = self.pedidos_geral.loc[self.pedidos_geral['id_pedido'] == pedido]
                     order = order.reset_index()
                     try:
-                        page_opus.goto('http://opusled.ddns.mobi:84/')
+                        page_opus.goto('http://signusmobileopus.smartservices.solutions:1010')
                         page_opus.click('//*[@id="mainpage"]/div[2]/div[1]/nav/ul/li[4]/a')
                         page_opus.click('//*[@id="btnBuscarCliente"]')
                         page_opus.fill('//*[@id="Filter_PARC_CGC"]', str(order['cnpj'][0]))
@@ -275,7 +301,7 @@ class Projeto():
                     page_opus.click('//*[@id="listaLocRapCliente"]/li[2]/a')
                     sleep(3)
                     if order['estado'][0] == 'SãoPaulo':
-                        page_opus.locator('#Pedido_UNID_COD').select_option('OPERA SOLUCOES')           
+                        page_opus.locator('#Pedido_UNID_COD').select_option('HILIFE COMERCIO')           
                     else:
                         page_opus.locator('#Pedido_UNID_COD').select_option('OPUS SISTEMAS')
                     sleep(3)
@@ -417,8 +443,7 @@ class Projeto():
     def roteiro_mercos(self,browser):
         
         page = Projeto.deve_logar_mercos(browser)
-        page = Projeto.seleciona_pedidos_mercos(page)
-        return page
+        Projeto.seleciona_pedidos_mercos(page)
     
     def roteiro_opus(self,browser):
 
@@ -430,17 +455,27 @@ class Projeto():
         page = Projeto.deve_logar_stamaco(browser)
         Projeto.deve_digitar_pedidos_stamaco(page)
         
-    def roteiro_finaliza(self,page_mercos):
+    def roteiro_finaliza(self,browser):
         
-        df_result_geral = pd.concat([self.df_result_pedidos_stamaco,self.df_result_pedidos_opus], ignore_index=True)
+        # df_result_geral = pd.concat([self.df_result_pedidos_stamaco,self.df_result_pedidos_opus], ignore_index=True)
         
-        if len(df_result_geral) > 0:
+        if len(self.df_result_pedidos_opus) > 0:
             
-            url = "https://app.mercos.com/login"           
+            context_mercos = browser.new_context(locale='pt-BR', timezone_id="America/Sao_Paulo")
+            page_mercos = context_mercos.new_page()
+            
+            url = "https://app.mercos.com/login"
+            username = dados.mercos_lg
+            password = dados.mercos_ps
+            
             page_mercos.goto(url)
+            page_mercos.fill('//*[@id="id_usuario"]', username)
+            page_mercos.fill('//*[@id="id_senha"]', password)
+            page_mercos.click('//*[@id="botaoEfetuarLogin"]')
             
-            pedidos_ok = df_result_geral.loc[df_result_geral['status']=='OK']
-            
+            # pedidos_ok = df_result_geral.loc[df_result_geral['status']=='OK']
+            pedidos_ok = self.df_result_pedidos_opus.loc[self.df_result_pedidos_opus['status']=='OK']
+                        
             for row, pedido in pedidos_ok.iterrows():
                 
                 page_mercos.click('//*[@id="aba_pedidos"]/span')                
@@ -464,10 +499,10 @@ class Projeto():
             with sync_playwright() as playwright:
                 chromium = playwright.chromium
                 browser = chromium.launch(headless=False)
-                page_mercos = Projeto.roteiro_mercos(browser)
+                Projeto.roteiro_mercos(browser)
                 Projeto.roteiro_opus(browser)
-                Projeto.roteiro_stamaco(browser)
-                Projeto.roteiro_finaliza(page_mercos)
+                # Projeto.roteiro_stamaco(browser)
+                Projeto.roteiro_finaliza(browser)
         else:
             print('Nenhum pedido para ser transmitido')
             
