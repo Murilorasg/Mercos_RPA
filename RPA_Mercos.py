@@ -310,6 +310,7 @@ class Projeto():
                     sleep(2)
                     if order['cond_pagamento'][0] == 'A VISTA ANTECIPADO':
                         page_opus.locator('#Pedido_COPG_COD_001').select_option((order['cond_pagamento'][0])) 
+                        page_opus.locator('#Pedido_FOPG_COD_001').select_option(('DEPÓSITO EM CONTA')) 
                     else:
                         page_opus.locator('#Pedido_COPG_COD_001').select_option((order['cond_pagamento'][0]+' DIAS')) 
                     sleep(2)
