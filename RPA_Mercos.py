@@ -186,7 +186,7 @@ class Projeto():
                 cnpj = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/div[1]/div[1]/h5/small[2]').inner_text(timeout=1000)
             except:
                 try:
-                    cnpj = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/h5/small').inner_text()
+                    cnpj = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/div[1]/div[1]/h5/small').inner_text()
                 except:
                     cnpj = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/h5/small[2]').inner_text()
             
@@ -313,6 +313,7 @@ class Projeto():
                         page_opus.locator('#Pedido_FOPG_COD_001').select_option(('DEPÓSITO EM CONTA')) 
                     else:
                         page_opus.locator('#Pedido_COPG_COD_001').select_option((order['cond_pagamento'][0]+' DIAS')) 
+                        page_opus.locator('#Pedido_FOPG_COD_001').select_option(('BOLETO BANCÁRIO')) 
                     sleep(2)
                     page_opus.click('//*[@id="identificacao-pedido"]/div[1]/a[2]')
                     sleep(3)
