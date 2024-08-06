@@ -22,6 +22,7 @@ class Projeto():
             'qnt':int,
             'preco':float,
             'desconto':float,
+            'pedido_cliente':str,
             'cond_pagamento':str,
             'transportadora':str,
             'observacao':str,
@@ -181,7 +182,7 @@ class Projeto():
             page_mercos.fill('//*[@id="id_texto"]', id_pedido)
             page_mercos.click('//*[@id="form_pesquisa_normal"]/div[1]/button')
             sleep(2)
-            page_mercos.click('//*[@id="js-div-global"]/div[2]/section/div[2]/div[1]/div[4]/div[2]/div[1]')
+            page_mercos.click('//*[@id="js-div-global"]/div[1]/section/div[2]/div[1]/div[4]/div[2]/div[1]/div[1]')
             try:
                 cnpj = page_mercos.locator('//*[@id="selecionado_autocomplete_id_codigo_cliente"]/span/div/div[1]/div[1]/h5/small[2]').inner_text(timeout=1000)
             except:
@@ -202,6 +203,10 @@ class Projeto():
             except:
                 cond_pagamento = page_mercos.locator('//*[@id="informacoes_complementares"]/div/div/div[2]/div[1]/div/div[2]').inner_text()
             transportadora = page_mercos.locator('//*[@id="informacoes_complementares"]/div/div/div[3]/div[2]/div/div[2]').inner_text()
+            try:
+                pedido_cliente = page_mercos.locator('//*[@id="informacoes_complementares"]/div/div/div[2]/div[2]/div/div[2]').inner_text().replace('.','')
+            except:
+                pedido_cliente = '.'
             observacao = page_mercos.locator('//*[@id="informacoes_complementares"]/div/div/div[4]/div[2]').inner_text()
             mostrar_todos = page_mercos.locator('//*[@id="listagem_item"]/div[2]/a').inner_text()
             if 'mostrar todos' in mostrar_todos.lower():
@@ -224,7 +229,7 @@ class Projeto():
                             desconto = list_dados[1]
                             
                             self.pedidos_geral.loc[len(self.pedidos_geral)] = (id_pedido, cnpj, nome_cliente, representada, estado, cod_produto, descricao_produto, qnt, preco, desconto, 
-                                                                        cond_pagamento, transportadora, observacao)
+                                                                        pedido_cliente,cond_pagamento, transportadora, observacao)
                         else:
                             pass
                     else:
@@ -305,7 +310,7 @@ class Projeto():
                     else:
                         page_opus.locator('#Pedido_UNID_COD').select_option('OPUS SISTEMAS')
                     sleep(3)
-                    page_opus.fill('//*[@id="Pedido_PEDS_EXT_CODCLI"]', '.')
+                    page_opus.fill('//*[@id="Pedido_PEDS_EXT_CODCLI"]', str(order['pedido_cliente'][0]))
                     # order['cond_pagamento'][0] = '28/35' #-----------------retirar
                     sleep(2)
                     if order['cond_pagamento'][0] == 'A VISTA ANTECIPADO':
@@ -334,11 +339,10 @@ class Projeto():
                     page_opus.locator('#Pedido_SERT_COD').select_option(order['transportadora'][0])
                     page_opus.fill('//*[@id="Pedido_OBPD_OBS"]', str(order['observacao'][0]))
                     page_opus.click('//*[@id="info-adicionais"]/div[1]/a[2]')
-                    page_opus.click('//*[@id="revisao-pedido"]/div[2]/div[3]/a[2]')      
+                    page_opus.click('//*[@id="revisao-pedido"]/div[2]/div[3]/a[2]')     
+                    page_opus.click('//*[@id="confirmar-pedido"]/div[2]/div/a[1]')      
                     
-                    self.df_result_pedidos_opus.loc[len(self.df_result_pedidos_opus)] = (pedido, 'OK')     
-                    
-                    page_opus.click('//*[@id="confirmar-pedido"]/div[2]/div/a[1]')           
+                    self.df_result_pedidos_opus.loc[len(self.df_result_pedidos_opus)] = (pedido, 'OK')          
                     
                 except Exception as e:
                     
@@ -484,7 +488,7 @@ class Projeto():
                 page_mercos.fill('//*[@id="id_texto"]', pedido['pedido'])
                 page_mercos.click('//*[@id="form_pesquisa_normal"]/div[1]/button')
                 sleep(2)
-                page_mercos.click('//*[@id="js-div-global"]/div[2]/section/div[2]/div[1]/div[4]/div[2]/div[1]')
+                page_mercos.click('//*[@id="js-div-global"]/div[1]/section/div[2]/div[1]/div[4]/div[2]/div[1]/div[1]')
                 page_mercos.click('//*[@id="js-div-global"]/div[3]/section/div[3]/div[10]/div[3]/button[1]')
                 sleep(2)
                 page_mercos.click('//*[@id="outras_opcoes"]/a')
