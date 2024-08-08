@@ -250,7 +250,7 @@ class Projeto():
         context_opus = browser.new_context(locale='pt-BR', timezone_id="America/Sao_Paulo")
         page_opus = context_opus.new_page()
         
-        url = "http://signusmobileopus.smartservices.solutions:1010"
+        url = "http://signusmobileopus.smartservices.solutions:1011/Acesso/Login/Login"
         username = dados.opus_lg
         password = dados.opus_ps
         
@@ -291,7 +291,7 @@ class Projeto():
                     order = self.pedidos_geral.loc[self.pedidos_geral['id_pedido'] == pedido]
                     order = order.reset_index()
                     try:
-                        page_opus.goto('http://signusmobileopus.smartservices.solutions:1010')
+                        page_opus.goto('http://signusmobileopus.smartservices.solutions:1011/Acesso/Login/Login')
                         page_opus.click('//*[@id="mainpage"]/div[2]/div[1]/nav/ul/li[4]/a')
                         page_opus.click('//*[@id="btnBuscarCliente"]')
                         page_opus.fill('//*[@id="Filter_PARC_CGC"]', str(order['cnpj'][0]))
@@ -489,7 +489,7 @@ class Projeto():
                 page_mercos.click('//*[@id="form_pesquisa_normal"]/div[1]/button')
                 sleep(2)
                 page_mercos.click('//*[@id="js-div-global"]/div[1]/section/div[2]/div[1]/div[4]/div[2]/div[1]/div[1]')
-                page_mercos.click('//*[@id="js-div-global"]/div[3]/section/div[3]/div[10]/div[3]/button[1]')
+                page_mercos.click('//*[@id="js-div-global"]/div[2]/section/div[3]/div[10]/div[3]/button')
                 sleep(2)
                 page_mercos.click('//*[@id="outras_opcoes"]/a')
                 sleep(2)
