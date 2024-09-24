@@ -320,6 +320,10 @@ class Projeto():
                         page_opus.locator('#Pedido_COPG_COD_001').select_option((order['cond_pagamento'][0]+' DIAS')) 
                         page_opus.locator('#Pedido_FOPG_COD_001').select_option(('BOLETO BANCÁRIO')) 
                     sleep(2)
+                    if order['transportadora'][0] == 'CIF':
+                        page_opus.locator('//html/body/div[1]/div[1]/div[3]/form/div[13]/div/div/select').select_option(label='2 - FRETE EMITENTE NÃO DESTACAR (CIF)') 
+                        
+                    sleep(2)
                     page_opus.click('//*[@id="identificacao-pedido"]/div[1]/a[2]')
                     sleep(3)
                     
@@ -336,7 +340,10 @@ class Projeto():
                     page_opus.click('//*[@id="itens-pedido"]/div[1]/a[2]')
                     # order['transportadora'][0]='TRANSVOAR' #-----------------retirar
                     sleep(3)
-                    page_opus.locator('#Pedido_SERT_COD').select_option(order['transportadora'][0])
+                    if order['transportadora'][0] == 'CIF':
+                        page_opus.locator('#Pedido_SERT_COD').select_option('JOHN EXPRESS')
+                    else:
+                        page_opus.locator('#Pedido_SERT_COD').select_option(order['transportadora'][0])
                     page_opus.fill('//*[@id="Pedido_OBPD_OBS"]', str(order['observacao'][0]))
                     page_opus.click('//*[@id="info-adicionais"]/div[1]/a[2]')
                     page_opus.click('//*[@id="revisao-pedido"]/div[2]/div[3]/a[2]')     
