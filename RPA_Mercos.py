@@ -291,7 +291,7 @@ class Projeto():
                     order = self.pedidos_geral.loc[self.pedidos_geral['id_pedido'] == pedido]
                     order = order.reset_index()
                     try:
-                        page_opus.goto('http://signusmobileopus.smartservices.solutions:1011/Acesso/Login/Login')
+                        page_opus.goto('http://signusmobileopus.smartservices.solutions:1011')
                         page_opus.click('//*[@id="mainpage"]/div[2]/div[1]/nav/ul/li[4]/a')
                         page_opus.click('//*[@id="btnBuscarCliente"]')
                         page_opus.fill('//*[@id="Filter_PARC_CGC"]', str(order['cnpj'][0]))
