@@ -175,10 +175,10 @@ class Projeto():
         
     def seleciona_pedidos_mercos(self, page_mercos):
         
-        for id_pedido in self.df_pedidos_mercos.iterrows():
+        for id, row in self.df_pedidos_mercos.iterrows():
             
             page_mercos.click('//*[@id="aba_pedidos"]/span')
-            id_pedido = str(id_pedido[1][0])
+            id_pedido = str(row['id_pedidos'])
             page_mercos.fill('//*[@id="id_texto"]', id_pedido)
             page_mercos.click('//*[@id="form_pesquisa_normal"]/div[1]/button')
             sleep(2)
@@ -250,11 +250,11 @@ class Projeto():
         context_opus = browser.new_context(locale='pt-BR', timezone_id="America/Sao_Paulo")
         page_opus = context_opus.new_page()
         
-        url = "http://signusmobileopus.smartservices.solutions:1011/Acesso/Login/Login"
+        url = "https://signusmobileopus.smartservices.solutions/"
         username = dados.opus_lg
         password = dados.opus_ps
         
-        page_opus.goto(url)
+        page_opus.goto(url, wait_until="domcontentloaded")
         page_opus.fill('//*[@id="UserName"]', username)
         page_opus.fill('//*[@id="Password"]', password)
         page_opus.click('//*[@id="btnLogin"]')
@@ -291,7 +291,7 @@ class Projeto():
                     order = self.pedidos_geral.loc[self.pedidos_geral['id_pedido'] == pedido]
                     order = order.reset_index()
                     try:
-                        page_opus.goto('http://signusmobileopus.smartservices.solutions:1011')
+                        page_opus.goto('https://signusmobileopus.smartservices.solutions/')
                         page_opus.click('//*[@id="mainpage"]/div[2]/div[1]/nav/ul/li[4]/a')
                         page_opus.click('//*[@id="btnBuscarCliente"]')
                         page_opus.fill('//*[@id="Filter_PARC_CGC"]', str(order['cnpj'][0]))
@@ -496,7 +496,7 @@ class Projeto():
                 page_mercos.click('//*[@id="form_pesquisa_normal"]/div[1]/button')
                 sleep(2)
                 page_mercos.click('//*[@id="js-div-global"]/div[1]/section/div[2]/div[1]/div[4]/div[2]/div[1]/div[1]')
-                page_mercos.click('//*[@id="js-div-global"]/div[2]/section/div[3]/div[10]/div[3]/button')
+                page_mercos.get_by_role('button', name='Gerar pedido').first.click()
                 sleep(2)
                 page_mercos.click('//*[@id="outras_opcoes"]/a')
                 sleep(2)
